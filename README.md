@@ -34,10 +34,11 @@ After beautifying the script, it becomes more readable:
 Within the script, we find a recruitment message and afterwards there seems to be some type of url at very end. By adding console.log(sdfghjklÃ) to the end of the script, we can reveal the content:
 ![mystery url](pix/image-1.png)<br>
 
+## Ahven <a name="ahven_fer"></a>
 This host is not recognized, but by adding it to  <mark>"/etc/hosts"</mark> file and navigating to this site we get ```"Forbidden"```. Next we can try to find content with feroxbyster:
 ![Feroxbuster 1st](pix/image-2.png)<br>
 
-## Ahven <a name="ahven_fer"></a>
+
 However, the only discovery is <mark>http://blackblackpinkbrown.4hv3n.fi/4/h/v</mark>, which leads to another "Forbidden" message. Upon closer inspection, this URL appears to spell "4hv3n," so we attempt to add the missing character and run Feroxbuster again:
 ![mp4 video](pix/image-3.png)<br>
 
