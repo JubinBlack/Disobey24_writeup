@@ -25,7 +25,7 @@ Please join me on this exciting journey, where collaboration and determination l
 The Disobey24 puzzle starts from <mark>kouvotopankki.fi</mark>.<br>
 Upon visiting the website, it becomes evident that it has been compromised by an entity named Ahven..
 
-## Malicious script<br>
+## Malicious script<a name="malScript"></a>
 Upon inspecting the website sources, we identify a script source address: <mark>https://4hv3n.fi/script.js</mark>
 ![original script](pix/image-6.png)<br>
 After beautifying the script, it becomes more readable:
@@ -37,7 +37,7 @@ Within the script, we find a recruitment message and afterwards there seems to b
 This host is not recognized, but by adding it to  <mark>"/etc/hosts"</mark> file and navigating to this site we get ```"Forbidden"```. Next we can try to find content with feroxbyster:
 ![Feroxbuster 1st](pix/image-2.png)<br>
 
-## Ahven, feroxbuster
+## Ahven, feroxbuster <a name="ahven_fer"></a>
 However, the only discovery is <mark>http://blackblackpinkbrown.4hv3n.fi/4/h/v</mark>, which leads to another "Forbidden" message. Upon closer inspection, this URL appears to spell "4hv3n," so we attempt to add the missing character and run Feroxbuster again:
 ![mp4 video](pix/image-3.png)<br>
 
@@ -46,7 +46,7 @@ Lets download video we just found and watch it (dah). Ahven member on video is t
 
 So lets dive into it.
 
-## mp4 forensic
+## mp4 forensic <a name="mp4foren"></a>
 We perform a forensic analysis on the MP4 file using the command strings -n 9 mp4.cta. Unfortunately, no useful information is found. However, at approximately 28 seconds into the video, there is a brief flash with a few frames of white, revealing the username for the IDS backup file server: "KKP_IDS_ADMIN."
 ![Username](pix/image-4.png)<br>
 
