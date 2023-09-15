@@ -7,7 +7,7 @@ Please join me on this exciting journey, where collaboration and determination l
 
 ## Table of Contents
 1. [Malicious script](#malScript)
-2. [Ahven, feroxbuster](#ahven_fer)
+2. [Ahven](#ahven_fer)
 3. [mp4 forensics](#mp4foren)
 4. [Finding backup](#findBackup)
 5. [PCAP](#pcapFile)
@@ -37,7 +37,7 @@ Within the script, we find a recruitment message and afterwards there seems to b
 This host is not recognized, but by adding it to  <mark>"/etc/hosts"</mark> file and navigating to this site we get ```"Forbidden"```. Next we can try to find content with feroxbyster:
 ![Feroxbuster 1st](pix/image-2.png)<br>
 
-## Ahven, feroxbuster <a name="ahven_fer"></a>
+## Ahven <a name="ahven_fer"></a>
 However, the only discovery is <mark>http://blackblackpinkbrown.4hv3n.fi/4/h/v</mark>, which leads to another "Forbidden" message. Upon closer inspection, this URL appears to spell "4hv3n," so we attempt to add the missing character and run Feroxbuster again:
 ![mp4 video](pix/image-3.png)<br>
 
