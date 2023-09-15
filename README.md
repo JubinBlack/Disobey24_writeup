@@ -25,7 +25,7 @@ Please join me on this exciting journey, where collaboration and determination l
 The Disobey24 puzzle starts from <mark>kouvotopankki.fi</mark>.<br>
 Upon visiting the website, it becomes evident that it has been compromised by an entity named Ahven..
 
-## Malicious script<a name="malScript"></a>
+## Malicious script <a name="malScript"></a>
 Upon inspecting the website sources, we identify a script source address: <mark>https://4hv3n.fi/script.js</mark>
 ![original script](pix/image-6.png)<br>
 After beautifying the script, it becomes more readable:
