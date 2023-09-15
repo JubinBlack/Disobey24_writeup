@@ -25,7 +25,7 @@ Please join me on this exciting journey, where collaboration and determination l
 The Disobey24 puzzle starts from <mark>kouvotopankki.fi</mark>.<br>
 Upon visiting the website, it becomes evident that it has been compromised by an entity named Ahven..
 
-## [Malicious script](malScript)<br>
+## Malicious script<br>
 Upon inspecting the website sources, we identify a script source address: <mark>https://4hv3n.fi/script.js</mark>
 ![original script](pix/image-6.png)<br>
 After beautifying the script, it becomes more readable:
@@ -37,7 +37,7 @@ Within the script, we find a recruitment message and afterwards there seems to b
 This host is not recognized, but by adding it to  <mark>"/etc/hosts"</mark> file and navigating to this site we get ```"Forbidden"```. Next we can try to find content with feroxbyster:
 ![Feroxbuster 1st](pix/image-2.png)<br>
 
-##[Ahven, feroxbuster](ahven_Fer)
+## Ahven, feroxbuster
 However, the only discovery is <mark>http://blackblackpinkbrown.4hv3n.fi/4/h/v</mark>, which leads to another "Forbidden" message. Upon closer inspection, this URL appears to spell "4hv3n," so we attempt to add the missing character and run Feroxbuster again:
 ![mp4 video](pix/image-3.png)<br>
 
@@ -46,7 +46,7 @@ Lets download video we just found and watch it (dah). Ahven member on video is t
 
 So lets dive into it.
 
-## [mp4 forensic](mp4foren)
+## mp4 forensic
 We perform a forensic analysis on the MP4 file using the command strings -n 9 mp4.cta. Unfortunately, no useful information is found. However, at approximately 28 seconds into the video, there is a brief flash with a few frames of white, revealing the username for the IDS backup file server: "KKP_IDS_ADMIN."
 ![Username](pix/image-4.png)<br>
 
@@ -55,14 +55,14 @@ While analyzing the audio, we observe a password in the form of a spectrum view 
 
 Now we got credentials for IDS admin, but where is this backup server?
 
-## [Finding backup](findBackup)
+## Finding backup
 By starting feroxbuster at ```"https://kouvostopankki.fi"``` there seems to be backup url and 401 code:
 ![ferox backup](pix/image-7.png)<br>
 
 Browsing to ```"https://kouvostopankki.fi/backup/~operator"``` we encounter a login popup. Using the credentials obtained from the video, "KKP_IDS_ADMIN" and "THIS_PASSWORD_IS_SECURE," we discover a PCAP file.
 ![pcapfound](pix/image-8.png)<br>
 
-## [PCAP](pcapFile)
+## PCAP
 
 In the PCAP file there is several interesting sections, including download of ```"bash tcp reverse-shell"```<br>
 emails: 
@@ -75,7 +75,7 @@ and some telcom session:
 ![TelCom](pix/image-11.png)<br>
 
 
-## [Reverse](reversing)
+## Reverse
 Exporting objects from the PCAP, we get binary that was used in a reverse-shell session to probably encrypt the user's files. Investigating these encrypted files that a possible attacker ran through base64 in a reverse-shell session, decoding them with base64 the data is still unreadable.
 ![EmployCSV_enc](pix/image-12.png)<br>
 
@@ -102,7 +102,7 @@ The KEY is located at RBP-0x23, the X (Initialization vector) or the previous bl
 ```KEY ^ X ^ B1CHR -> B1ENC ^ KEY ^ B2CHR -> B2ENC ^ KEY ^ B3CHR``` <br>
 
 
-### [Reversing key](revKey)
+### Reversing key
 
 In the PCAP, there were three different files, but one of them should include magic bytes, and that file is an APK. Therefore, it should be possible to reverse it since we know the value of X in the first block and encrypted character (dah). Additionally, we know what the APK file's magic bytes are ('0x504B0304'). We can start reversing the files using the following logic:
 
@@ -133,7 +133,7 @@ What comes to that first byte tho? Investigating the logic behind and reading ps
 ![bitwise](pix/image-23.png)<br>This operation yielded our very first character to fill our encryption logic.<br>
 Now we know this, we can reverse that too and here is the full key that was used to encrypt the files: ```"0xb57541db1dd06c035016a259d97b687d"```
 
-### [Decrypting all files](decryptFiles)
+### Decrypting all files
 
 After solving the key, we can proceed to write code to decrypt all files:
 ```python
@@ -180,9 +180,9 @@ for encFile in encFiles:
     with open("decryptedFiles/"+encFile.replace(".enc", ""), 'wb') as f:
         f.write(bytes(bPlaintext))
 ```
-# [Credentials](creds)
+# Credentials
 
-## [MFA.apk & MFA Token](mfaapk)
+## MFA.apk & MFA Token
 
 Next interesting part is the MFA.apk, decompiling it using jadx-gui we can read whats under the hood:
 ![mfa.apk](pix/image-16.png)<br>
@@ -207,7 +207,7 @@ So Amadea ID is: 88426, now building GET request and testing it:
 And so we have working MFA request.
 
 
-## [Email](phissingEmail)
+## Email
 
 So far, we have a possible username and MFA token. The only missing part now is the password for the Amadea user. There was one base64-encoded password in the pcap file, but according to emails, it is changed already and also... It's not working...<br>
 After reading the emails, it appears that SpamAssassin 3.4.6 is in use:<br>
@@ -288,7 +288,7 @@ In-Reply-To: <e8e8137c-a43f-0eae-f41a-ac25fc533afd@kouvostopankki.fi>
 </body>
 </html>
 ```
-### [Password](pass)
+### Password
 To work with the Telecom service, which can only take one line at a time, I've written a Python script for this:
 
 ```python
@@ -334,7 +334,7 @@ I'll be using python http.server along with netcat for this task.<br>
 
 ![password](pix/image-21.png)<br>
 
-# [Get the badge!](hackerbadge)
+# Get the badge!
 
 Now that we have all the necessary information, it's time to put it to the test
 ```
