@@ -5,19 +5,19 @@ The Disobey24 puzzle starts from <mark>kouvotopankki.fi</mark>.<br>
 Upon visiting the website, it becomes evident that it has been compromised by an entity named Ahven..
 
 Upon inspecting the website sources, we identify a script source address: <mark>https://4hv3n.fi/script.js</mark>
-![original script](pix/image-6.png)
+![original script](pix/image-6.png)<br>
 After beautifying the script, it becomes more readable:
 
-![ahven script](pix/image.png)
+![ahven script](pix/image.png)<br>
 Within the script, we find a recruitment message and afterwards there seems to be some type of url at very end. By adding console.log(sdfghjklÃ) to the end of the script, we can reveal the content:
-![mystery url](pix/image-1.png)
+![mystery url](pix/image-1.png)<br>
 
 This host is not recognized, but by adding it to  <mark>"/etc/hosts"</mark> file and navigating to this site we get ```"Forbidden"```. Next we can try to find content with feroxbyster:
-![Feroxbuster 1st](pix/image-2.png)
+![Feroxbuster 1st](pix/image-2.png)<br>
 
 
 However, the only discovery is <mark>http://blackblackpinkbrown.4hv3n.fi/4/h/v</mark>, which leads to another "Forbidden" message. Upon closer inspection, this URL appears to spell "4hv3n," so we attempt to add the missing character and run Feroxbuster again:
-![mp4 video](pix/image-3.png)
+![mp4 video](pix/image-3.png)<br>
 
 This time, we have successfully found a video!
 
@@ -28,47 +28,47 @@ So lets dive into it.
 
 ## mp4 forensic
 We perform a forensic analysis on the MP4 file using the command strings -n 9 mp4.cta. Unfortunately, no useful information is found. However, at approximately 28 seconds into the video, there is a brief flash with a few frames of white, revealing the username for the IDS backup file server: "KKP_IDS_ADMIN."
-![Username](pix/image-4.png)
+![Username](pix/image-4.png)<br>
 
 While analyzing the audio, we observe a password in the form of a spectrum view using Audacity: "THIS_PASSWORD_IS_SECURE."
-![Secure password](pix/image-5.png)
+![Secure password](pix/image-5.png)<br>
 
 Now we got credentials for IDS admin, but where is this backup server?
 
 ## Finding backup
 By starting feroxbuster at ```"https://kouvostopankki.fi"``` there seems to be backup url and 401 code:
-![ferox backup](pix/image-7.png)
+![ferox backup](pix/image-7.png)<br>
 
 Browsing to ```"https://kouvostopankki.fi/backup/~operator"``` we encounter a login popup. Using the credentials obtained from the video, "KKP_IDS_ADMIN" and "THIS_PASSWORD_IS_SECURE," we discover a PCAP file.
-![pcapfound](pix/image-8.png)
+![pcapfound](pix/image-8.png)<br>
 
 ## pcap
 
 In the PCAP file there is several interesting sections, including download of ```"bash tcp reverse-shell"```<br>
 emails: 
-![email snippet](pix/image-9.png)
+![email snippet](pix/image-9.png)<br>
 
 reverse-shell session:
-![revshell](pix/image-10.png)
+![revshell](pix/image-10.png)<br>
 
 and some telcom session:
-![TelCom](pix/image-11.png)
+![TelCom](pix/image-11.png)<br>
 
 
 ## Reverse
 "Exporting objects from the PCAP, we get binary that was used in a reverse-shell session to probably encrypt the user's files. Investigating these encrypted files that a possible attacker ran through base64 in a reverse-shell session, decoding them with base64 the data is still unreadable.
-![EmployCSV_enc](pix/image-12.png)
+![EmployCSV_enc](pix/image-12.png)<br>
 
 Reversing binary with ghidra it seems that data in files is encrypted in 16bytes block. Pseudo code doesn't make sense for this, so investigating this via gdb we can solve this encryption logic. At first it only did some shifting for file but investigating there was check if PID was traced, so first some modifications to binary:<br>
 Since the binary checks if it is being traced by reading it is reading own status from /proc/self/status and checking the TracerPID, by modifying this 'JN' command to a 'JNZ' command, we can run it as if it were not being debugged.
 
 We start this debbuging with Ghidra, where we are trying to find some "meaningful" function what seems something like encryption.<br>
 
-!["main"](pix/image-31.png)
+!["main"](pix/image-31.png)<br>
  the most intriguing function is ```FUN_00101721```, which is called at ```0x5....ad0```. This location will serve as our starting point for the first breakpoint in GDB.
 
  Another point was within the ```FUN_00101721``` and that was ```FUN_0010146A```, (This function was never exectued if that earlier mentioned TracerPID check was something else than 0).<br>
- ![XOR](pix/image-32.png)
+ ![XOR](pix/image-32.png)<br>
 
 I was unable to reverse this, so time to start GDB and figure out what's happening.
 
@@ -178,10 +178,10 @@ intranet.kouvostopankki.fi
 ```
 
 The URL for the request takes an 'id' parameter, which can be extracted from the 'employees.csv' file, which we decrypted earlier:<br>
-![employees](pix/image-17.png)
+![employees](pix/image-17.png)<br>
 
 So Amadea ID is: 88426, now building GET request and testing it:
-![getCode](pix/image-18.png)
+![getCode](pix/image-18.png)<br>
 
 And so we have working MFA request.
 
@@ -190,7 +190,7 @@ And so we have working MFA request.
 
 So far, we have a possible username and MFA token. The only missing part now is the password for the Amadea user. There was one base64-encoded password in the pcap file, but according to emails, it is changed already and also... It's not working...<br>
 After reading the emails, it appears that SpamAssassin 3.4.6 is in use:<br>
-![spam_assassin](pix/image-26.png)
+![spam_assassin](pix/image-26.png)<br>
 Seems like it is checking if email came from domain, does it have HTML body and DGIM. Also in these emails, they informs that they are "deploying stronger spam filtering measures and implementing strict SPF checks to enhance our email security.". 
 
 At first I tried to connect to mail server ```mx.kouvostopankki.fi:587``` and send some "totally safe" emails to amadea, but no luck in there.
@@ -225,19 +225,19 @@ kouvostopankki.fi.      86400   IN      TXT     "Disobey 2024 hacker puzzle"
 seems like that only the domain's A record and MX records are authorized to send emails for the domain, and any other source should result in a hard SPF failure.<br>
 
 But what a luck, ```kouvostopankki.fi``` domain had a telecom service running on port ```42851``` that creates connections from its domain to other endpoints. I confirmed this by successfully establishing a connection back to my endpoint:<br>
-![telecom](pix/image-27.png)
+![telecom](pix/image-27.png)<br>
 
 Also another neat thing: we cannot verify if this service is capable of handle TLS connection (not likely) since it doesn't inform if connection is dropped. However, there seems to be an open SMTP to use instead of SMTPS. This we can confirm by fact that if there is no confirmation that data is sent like there is in valid connection when it informs that ```Sending data: mydata```.<br>
 
 #### No connection
-![no_connection](pix/image-29.png)
+![no_connection](pix/image-29.png)<br>
 
 #### Connection to SMTP
-![SMTP_connection](pix/image-30.png)
+![SMTP_connection](pix/image-30.png)<br>
 
 The next step is to create a convincing phishing email for Amadea since, according to emails he/she/something_else_what has some problems with phissing emails. Also there is mentioned that Pinja will inform with intranet address since Amadea lost his/her/dont_even... bookmarks and intranet address with it.
 
-![intranet](pix/image-19.png)
+![intranet](pix/image-19.png)<br>
 
 
 Alright, after creating a phishing email based on insights from the PCAP files and knowing that Amadea will be informed of the address through it, we're ready to see what happens when we send it. The sender of this email will be Pinja, one of the individuals in the email conversation. Here's the email content:
@@ -306,12 +306,12 @@ for line in payload.split("\n"):
 print("All done..")
 ```
 As for the server, I've ensured that the phishing address closely mimics intranet.kouvostopankki.fi by copying its source code.
-![local_intranet](pix/image-20.png)
+![local_intranet](pix/image-20.png)<br>
 
 I'll be using python http.server along with netcat for this task.<br>
  The plan is to execute a script that will prompt Amadea to open the email. Once that's done, the href link will be opened to our server. At this point, we'll quickly switch from the HTTP server to netcat to capture the POST request data, which should contain the username and password.
 
-![password](pix/image-21.png)
+![password](pix/image-21.png)<br>
 
 # Get the badge!
 
@@ -329,5 +329,5 @@ We will attempt to log in to the intranet. Upon successful login, it redirects u
 
 We will retrieve the code from the endpoint we discovered earlier and submit it. This action results in another redirect, eventually leading us to the Holvi address, where we can finally purchase our well-deserved hacker badge!
 
-![Done](pix/image-22.png)
+![Done](pix/image-22.png)<br>
 
