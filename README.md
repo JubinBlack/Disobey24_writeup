@@ -55,14 +55,14 @@ While analyzing the audio, we observe a password in the form of a spectrum view 
 
 Now we got credentials for IDS admin, but where is this backup server?
 
-## Finding backup
+## Finding backup <a name="findBackup"></a>
 By starting feroxbuster at ```"https://kouvostopankki.fi"``` there seems to be backup url and 401 code:
 ![ferox backup](pix/image-7.png)<br>
 
 Browsing to ```"https://kouvostopankki.fi/backup/~operator"``` we encounter a login popup. Using the credentials obtained from the video, "KKP_IDS_ADMIN" and "THIS_PASSWORD_IS_SECURE," we discover a PCAP file.
 ![pcapfound](pix/image-8.png)<br>
 
-## PCAP
+## PCAP <a name="pcapFile"></a>
 
 In the PCAP file there is several interesting sections, including download of ```"bash tcp reverse-shell"```<br>
 emails: 
@@ -75,7 +75,7 @@ and some telcom session:
 ![TelCom](pix/image-11.png)<br>
 
 
-## Reverse
+## Reverse <a name="reversing"></a>
 Exporting objects from the PCAP, we get binary that was used in a reverse-shell session to probably encrypt the user's files. Investigating these encrypted files that a possible attacker ran through base64 in a reverse-shell session, decoding them with base64 the data is still unreadable.
 ![EmployCSV_enc](pix/image-12.png)<br>
 
@@ -92,7 +92,7 @@ We start this debbuging with Ghidra, where we are trying to find some "meaningfu
 
 I was unable to reverse this, so time to start GDB and figure out what's happening.
 
-### [Block Cipher logic](revCipher)
+### [Block Cipher logic] <a name="revCipher"></a>
 
 Running the script a couple of times via GDB, we finaly identify block cipher logic at address 0x....5dd -->.<br>
 
@@ -102,7 +102,7 @@ The KEY is located at RBP-0x23, the X (Initialization vector) or the previous bl
 ```KEY ^ X ^ B1CHR -> B1ENC ^ KEY ^ B2CHR -> B2ENC ^ KEY ^ B3CHR``` <br>
 
 
-### Reversing key
+### Reversing key <a name="revKey"></a>
 
 In the PCAP, there were three different files, but one of them should include magic bytes, and that file is an APK. Therefore, it should be possible to reverse it since we know the value of X in the first block and encrypted character (dah). Additionally, we know what the APK file's magic bytes are ('0x504B0304'). We can start reversing the files using the following logic:
 
@@ -133,7 +133,7 @@ What comes to that first byte tho? Investigating the logic behind and reading ps
 ![bitwise](pix/image-23.png)<br>This operation yielded our very first character to fill our encryption logic.<br>
 Now we know this, we can reverse that too and here is the full key that was used to encrypt the files: ```"0xb57541db1dd06c035016a259d97b687d"```
 
-### Decrypting all files
+### Decrypting all files <a name="decryptFiles"></a>
 
 After solving the key, we can proceed to write code to decrypt all files:
 ```python
@@ -180,9 +180,9 @@ for encFile in encFiles:
     with open("decryptedFiles/"+encFile.replace(".enc", ""), 'wb') as f:
         f.write(bytes(bPlaintext))
 ```
-# Credentials
+# Credentials <a name="creds"></a>
 
-## MFA.apk & MFA Token
+## MFA.apk & MFA Token <a name="mfaapk"></a>
 
 Next interesting part is the MFA.apk, decompiling it using jadx-gui we can read whats under the hood:
 ![mfa.apk](pix/image-16.png)<br>
@@ -207,7 +207,7 @@ So Amadea ID is: 88426, now building GET request and testing it:
 And so we have working MFA request.
 
 
-## Email
+## Email <a name="phissinEmail"></a>
 
 So far, we have a possible username and MFA token. The only missing part now is the password for the Amadea user. There was one base64-encoded password in the pcap file, but according to emails, it is changed already and also... It's not working...<br>
 After reading the emails, it appears that SpamAssassin 3.4.6 is in use:<br>
@@ -288,7 +288,7 @@ In-Reply-To: <e8e8137c-a43f-0eae-f41a-ac25fc533afd@kouvostopankki.fi>
 </body>
 </html>
 ```
-### Password
+### Password <a name="pass"></a>
 To work with the Telecom service, which can only take one line at a time, I've written a Python script for this:
 
 ```python
@@ -334,7 +334,7 @@ I'll be using python http.server along with netcat for this task.<br>
 
 ![password](pix/image-21.png)<br>
 
-# Get the badge!
+# Get the badge! <a name="hackerbadge"></a>
 
 Now that we have all the necessary information, it's time to put it to the test
 ```
