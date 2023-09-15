@@ -61,13 +61,25 @@ and some telcom session:
 
 Reversing binary with ghidra it seems that data in files is encrypted in 16bytes block. Pseudo code doesn't make sense for this, so investigating this via gdb we can solve this encryption logic. At first it only did some shifting for file but investigating there was check if PID was traced, so first some modifications to binary:<br>
 Since the binary checks if it is being traced by reading it is reading own status from /proc/self/status and checking the TracerPID, by modifying this 'JN' command to a 'JNZ' command, we can run it as if it were not being debugged.
-### XOR logic
 
+We start this debbuging with Ghidra, where we are trying to find some "meaningful" function what seems something like encryption.<br>
 
-Running the script a couple of times via GDB, we finaly identify XOR logic at address 0x....5dd -->.<br>
+!["main"](pix/image-31.png)
+ the most intriguing function is ```FUN_00101721```, which is called at ```0x5....ad0```. This location will serve as our starting point for the first breakpoint in GDB.
+
+ Another point was within the ```FUN_00101721``` and that was ```FUN_0010146A```, (This function was never exectued if that earlier mentioned TracerPID check was something else than 0).<br>
+ ![XOR](pix/image-32.png)
+
+I was unable to reverse this, so time to start GDB and figure out what's happening.
+
+### Block Cipher logic
+
+Running the script a couple of times via GDB, we finaly identify block cipher logic at address 0x....5dd -->.<br>
+
 ![XOR_logic](pix/image-24.png)<br>
- The KEY is located at RBP-0x23, the X (or the previous block's encrypted character) value is at RBP-0x22, and the cleartext character is at RBP-0x21. The entire X value for the first block is held at 0x....905 & 0x...910 (0x8948ffffff2cbd89e0ec8148e5894855). These values will be XORed for the first 16-byte block. In subsequent blocks after the first, there will still be a key and cleartext character, but now it uses the previous block's encrypted character. In a nutshell:<br>
-```KEY ^ X ^ B1CHR -> B1ENC ^ KEY ^ B2CHR``` <br>
+
+ The KEY is located at RBP-0x23, the X (Initialization vector) or the previous block's encrypted character value is at RBP-0x22, and the cleartext character is at RBP-0x21. The entire X value for the first block is held at 0x....905 & 0x...910 (0x8948ffffff2cbd89e0ec8148e5894855). These values will be XORed for the first 16-byte block. In subsequent blocks after the first, there will still be a key and cleartext character, but now it uses the previous block's encrypted character. In a nutshell:<br>
+```KEY ^ X ^ B1CHR -> B1ENC ^ KEY ^ B2CHR -> B2ENC ^ KEY ^ B3CHR``` <br>
 
 
 ### Reversing key
@@ -215,7 +227,13 @@ seems like that only the domain's A record and MX records are authorized to send
 But what a luck, ```kouvostopankki.fi``` domain had a telecom service running on port ```42851``` that creates connections from its domain to other endpoints. I confirmed this by successfully establishing a connection back to my endpoint:<br>
 ![telecom](pix/image-27.png)
 
-Also another neat thing: we cannot verify if this service is capable of handle TLS connection (not likely) since it doesn't inform if connection is dropped. However, there seems to be an open SMTP to use instead of SMTPS. This we can confirm by fact that if there is no confirmation that data is sent like there is in valid connection when it informs that ```Sending data: mydata```.
+Also another neat thing: we cannot verify if this service is capable of handle TLS connection (not likely) since it doesn't inform if connection is dropped. However, there seems to be an open SMTP to use instead of SMTPS. This we can confirm by fact that if there is no confirmation that data is sent like there is in valid connection when it informs that ```Sending data: mydata```.<br>
+
+#### No connection
+![no_connection](pix/image-29.png)
+
+#### Connection to SMTP
+![SMTP_connection](pix/image-30.png)
 
 The next step is to create a convincing phishing email for Amadea since, according to emails he/she/something_else_what has some problems with phissing emails. Also there is mentioned that Pinja will inform with intranet address since Amadea lost his/her/dont_even... bookmarks and intranet address with it.
 
