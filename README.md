@@ -1,3 +1,10 @@
+# Introduction
+In this report, HOLAZOo and I embarked on a challenging journey into the world of cybersecurity and digital espionage. Together, we encountered the Disobey24 puzzle, a complex enigma centered around a compromised website, intriguing scripts, and encrypted files. Our combined efforts and technical skills were put to the test as we worked through the stages of this puzzle, uncovering secrets hidden within a mysterious video and infiltrating a secure intranet.
+
+Throughout this adventure, I will take you step by step through our investigation, from dissecting suspicious scripts to decoding encrypted data. Together with my friend, we navigated the treacherous waters of digital forensics, delving into PCAP files, and reverse engineering binaries. Our goal was to solve the puzzle, and we spared no effort in decrypting the clues.
+
+Please join me on this exciting journey, where collaboration and determination led us to uncover hidden credentials, manipulate email systems, and ultimately gain access to an intranet. Our adventure culminates in the pursuit of a coveted hacker badge, and I'm excited to share our experiences and discoveries with you.
+
 
 # Stage 1
 
