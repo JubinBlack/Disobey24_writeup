@@ -207,7 +207,7 @@ So Amadea ID is: 88426, now building GET request and testing it:
 And so we have working MFA request.
 
 
-## Email <a name="phissinEmail"></a>
+## Email <a name="phissingEmail"></a>
 
 So far, we have a possible username and MFA token. The only missing part now is the password for the Amadea user. There was one base64-encoded password in the pcap file, but according to emails, it is changed already and also... It's not working...<br>
 After reading the emails, it appears that SpamAssassin 3.4.6 is in use:<br>
