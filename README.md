@@ -5,12 +5,27 @@ Throughout this adventure, I will take you step by step through our investigatio
 
 Please join me on this exciting journey, where collaboration and determination led us to uncover hidden credentials, manipulate email systems, and ultimately gain access to an intranet. Our adventure culminates in the pursuit of a coveted hacker badge, and I'm excited to share our experiences and discoveries with you.
 
-
-# Stage 1
+## Table of Contents
+1. [Malicious script](malScript)
+2. [Ahven, feroxbuster](ahven_fer)
+3. [mp4 forensics](mp4foren)
+4. [Finding backup](findBackup)
+5. [PCAP](pcapFile)
+6. [Reverse](reversing)
+    1. [Block Cipher logic](revCipher)
+    2. [Reversing key](revKey)
+    3. [Decrypting all files](decryptFiles)
+7. [Credentials](creds)
+   1. [MFA.apk & MFA Token](mfaapk)
+   3. [Email](phissingEmail)
+   4. [Password](pass)
+8. [Get the badge!](hackerbadge)
+    
 
 The Disobey24 puzzle starts from <mark>kouvotopankki.fi</mark>.<br>
 Upon visiting the website, it becomes evident that it has been compromised by an entity named Ahven..
 
+## [Malicious script](#malScript)<br>
 Upon inspecting the website sources, we identify a script source address: <mark>https://4hv3n.fi/script.js</mark>
 ![original script](pix/image-6.png)<br>
 After beautifying the script, it becomes more readable:
@@ -22,18 +37,16 @@ Within the script, we find a recruitment message and afterwards there seems to b
 This host is not recognized, but by adding it to  <mark>"/etc/hosts"</mark> file and navigating to this site we get ```"Forbidden"```. Next we can try to find content with feroxbyster:
 ![Feroxbuster 1st](pix/image-2.png)<br>
 
-
+##[Ahven, feroxbuster](#ahven_Fer)
 However, the only discovery is <mark>http://blackblackpinkbrown.4hv3n.fi/4/h/v</mark>, which leads to another "Forbidden" message. Upon closer inspection, this URL appears to spell "4hv3n," so we attempt to add the missing character and run Feroxbuster again:
 ![mp4 video](pix/image-3.png)<br>
 
-This time, we have successfully found a video!
-
-# Stage 2
+This time, we have successfully found a video!<br>
 Lets download video we just found and watch it (dah). Ahven member on video is telling that there is hidden credentials for IDS admin user in this video and our "job" is to intrude to kouvostopankki intranet.
 
 So lets dive into it.
 
-## mp4 forensic
+## [mp4 forensic](#mp4foren)
 We perform a forensic analysis on the MP4 file using the command strings -n 9 mp4.cta. Unfortunately, no useful information is found. However, at approximately 28 seconds into the video, there is a brief flash with a few frames of white, revealing the username for the IDS backup file server: "KKP_IDS_ADMIN."
 ![Username](pix/image-4.png)<br>
 
@@ -42,14 +55,14 @@ While analyzing the audio, we observe a password in the form of a spectrum view 
 
 Now we got credentials for IDS admin, but where is this backup server?
 
-## Finding backup
+## [Finding backup](#findBackup)
 By starting feroxbuster at ```"https://kouvostopankki.fi"``` there seems to be backup url and 401 code:
 ![ferox backup](pix/image-7.png)<br>
 
 Browsing to ```"https://kouvostopankki.fi/backup/~operator"``` we encounter a login popup. Using the credentials obtained from the video, "KKP_IDS_ADMIN" and "THIS_PASSWORD_IS_SECURE," we discover a PCAP file.
 ![pcapfound](pix/image-8.png)<br>
 
-## pcap
+## [PCAP](#pcapFile)
 
 In the PCAP file there is several interesting sections, including download of ```"bash tcp reverse-shell"```<br>
 emails: 
@@ -62,8 +75,8 @@ and some telcom session:
 ![TelCom](pix/image-11.png)<br>
 
 
-## Reverse
-"Exporting objects from the PCAP, we get binary that was used in a reverse-shell session to probably encrypt the user's files. Investigating these encrypted files that a possible attacker ran through base64 in a reverse-shell session, decoding them with base64 the data is still unreadable.
+## [Reverse](#reversing)
+Exporting objects from the PCAP, we get binary that was used in a reverse-shell session to probably encrypt the user's files. Investigating these encrypted files that a possible attacker ran through base64 in a reverse-shell session, decoding them with base64 the data is still unreadable.
 ![EmployCSV_enc](pix/image-12.png)<br>
 
 Reversing binary with ghidra it seems that data in files is encrypted in 16bytes block. Pseudo code doesn't make sense for this, so investigating this via gdb we can solve this encryption logic. At first it only did some shifting for file but investigating there was check if PID was traced, so first some modifications to binary:<br>
@@ -79,17 +92,17 @@ We start this debbuging with Ghidra, where we are trying to find some "meaningfu
 
 I was unable to reverse this, so time to start GDB and figure out what's happening.
 
-### Block Cipher logic
+### [Block Cipher logic](#revCipher)
 
 Running the script a couple of times via GDB, we finaly identify block cipher logic at address 0x....5dd -->.<br>
 
 ![XOR_logic](pix/image-24.png)<br>
 
- The KEY is located at RBP-0x23, the X (Initialization vector) or the previous block's encrypted character value is at RBP-0x22, and the cleartext character is at RBP-0x21. The entire X value for the first block is held at 0x....905 & 0x...910 (0x8948ffffff2cbd89e0ec8148e5894855). These values will be XORed for the first 16-byte block. In subsequent blocks after the first, there will still be a key and cleartext character, but now it uses the previous block's encrypted character. In a nutshell:<br>
+The KEY is located at RBP-0x23, the X (Initialization vector) or the previous block's encrypted character value is at RBP-0x22, and the cleartext character is at RBP-0x21. The entire X value for the first block is held at 0x....905 & 0x...910 (0x8948ffffff2cbd89e0ec8148e5894855). These values will be XORed for the first 16-byte block. In subsequent blocks after the first, there will still be a key and cleartext character, but now it uses the previous block's encrypted character. In a nutshell:<br>
 ```KEY ^ X ^ B1CHR -> B1ENC ^ KEY ^ B2CHR -> B2ENC ^ KEY ^ B3CHR``` <br>
 
 
-### Reversing key
+### [Reversing key](#revKey)
 
 In the PCAP, there were three different files, but one of them should include magic bytes, and that file is an APK. Therefore, it should be possible to reverse it since we know the value of X in the first block and encrypted character (dah). Additionally, we know what the APK file's magic bytes are ('0x504B0304'). We can start reversing the files using the following logic:
 
@@ -120,7 +133,7 @@ What comes to that first byte tho? Investigating the logic behind and reading ps
 ![bitwise](pix/image-23.png)<br>This operation yielded our very first character to fill our encryption logic.<br>
 Now we know this, we can reverse that too and here is the full key that was used to encrypt the files: ```"0xb57541db1dd06c035016a259d97b687d"```
 
-### Decrypting all files
+### [Decrypting all files](#decryptFiles)
 
 After solving the key, we can proceed to write code to decrypt all files:
 ```python
@@ -167,8 +180,9 @@ for encFile in encFiles:
     with open("decryptedFiles/"+encFile.replace(".enc", ""), 'wb') as f:
         f.write(bytes(bPlaintext))
 ```
+# [Credentials](#creds)
 
-### mfa.apk
+## [MFA.apk & MFA Token](#mfaapk)
 
 Next interesting part is the MFA.apk, decompiling it using jadx-gui we can read whats under the hood:
 ![mfa.apk](pix/image-16.png)<br>
@@ -193,7 +207,7 @@ So Amadea ID is: 88426, now building GET request and testing it:
 And so we have working MFA request.
 
 
-### email/password
+## [Email](#phissingEmail)
 
 So far, we have a possible username and MFA token. The only missing part now is the password for the Amadea user. There was one base64-encoded password in the pcap file, but according to emails, it is changed already and also... It's not working...<br>
 After reading the emails, it appears that SpamAssassin 3.4.6 is in use:<br>
@@ -274,7 +288,7 @@ In-Reply-To: <e8e8137c-a43f-0eae-f41a-ac25fc533afd@kouvostopankki.fi>
 </body>
 </html>
 ```
-
+### [Password](#pass)
 To work with the Telecom service, which can only take one line at a time, I've written a Python script for this:
 
 ```python
@@ -320,7 +334,7 @@ I'll be using python http.server along with netcat for this task.<br>
 
 ![password](pix/image-21.png)<br>
 
-# Get the badge!
+# [Get the badge!](#hackerbadge)
 
 Now that we have all the necessary information, it's time to put it to the test
 ```
