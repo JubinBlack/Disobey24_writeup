@@ -215,7 +215,7 @@ seems like that only the domain's A record and MX records are authorized to send
 But what a luck, ```kouvostopankki.fi``` domain had a telecom service running on port ```42851``` that creates connections from its domain to other endpoints. I confirmed this by successfully establishing a connection back to my endpoint:<br>
 ![telecom](pix/image-27.png)
 
-Also another neat thing: we cannot verify if this service is capable of handle TLS connection (not likely). However, there seems to be an open SMTP which we can use instead of SMTPS.
+Also another neat thing: we cannot verify if this service is capable of handle TLS connection (not likely) since it doesn't inform if connection is dropped. However, there seems to be an open SMTP to use instead of SMTPS. This we can confirm by fact that if there is no confirmation that data is sent like there is in valid connection when it informs that ```Sending data: mydata```.
 
 The next step is to create a convincing phishing email for Amadea since, according to emails he/she/something_else_what has some problems with phissing emails. Also there is mentioned that Pinja will inform with intranet address since Amadea lost his/her/dont_even... bookmarks and intranet address with it.
 
