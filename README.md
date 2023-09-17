@@ -5,22 +5,7 @@ Throughout this adventure, I will take you step by step through our investigatio
 
 Please join me on this exciting journey, where collaboration and determination led us to uncover hidden credentials, manipulate email systems, and ultimately gain access to an intranet. Our adventure culminates in the pursuit of a coveted hacker badge, and I'm excited to share our experiences and discoveries with you.
 
-## Table of Contents
-1. [Malicious script](#malScript)
-2. [Ahven](#ahven_fer)
-3. [mp4 forensics](#mp4foren)
-4. [Finding backup](#findBackup)
-5. [PCAP](#pcapFile)
-6. [Reverse](#reversing)
-    1. [Block Cipher logic](#revCipher)
-    2. [Reversing key](#revKey)
-    3. [Decrypting all files](#decryptFiles)
-7. [Credentials](#creds)
-   1. [MFA.apk & MFA Token](#mfaapk)
-   3. [Email](#phissingEmail)
-   4. [Password](#pass)
-8. [Get the badge!](#hackerbadge)
-    
+# Lets begin
 
 The Disobey24 puzzle starts from <mark>kouvotopankki.fi</mark>.<br>
 Upon visiting the website, it becomes evident that it has been compromised by an entity named Ahven..
