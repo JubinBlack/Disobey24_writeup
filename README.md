@@ -359,7 +359,7 @@ for line in payload.split("\n"):
     waitingFor=f"Sending data: {line}"
     _=tn.read_until(waitingFor.encode(), timeout=3)
 ```
-As for the server, I've ensured that the phishing address closely mimics intranet.kouvostopankki.fi by copying its source code.
+As for the server, I've ensured that the phishing address closely mimics intranet.kouvostopankki.fi by copying its source code.<br>
 ![local_intranet](pix/image-20.png)<br>
 
 I'll be using python http.server along with netcat for this task.<br>
