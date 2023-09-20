@@ -1,4 +1,4 @@
-# Introduction
+# Epic Introduction ft. chatGPT
 In this report, [HOLAZOo](https://www.zolaboo.com/blog/) and I embarked on a challenging journey into the world of cybersecurity and digital espionage. Together, we encountered the Disobey24 puzzle, a complex enigma centered around a compromised website, intriguing scripts, and encrypted files. Our combined efforts and technical skills were put to the test as we worked through the stages of this puzzle, uncovering secrets hidden within a mysterious video and infiltrating a secure intranet.
 
 Throughout this adventure, I will take you step by step through our investigation, from dissecting suspicious scripts to decoding encrypted data. Together with my friend, we navigated the treacherous waters of digital forensics, delving into PCAP files, and reverse engineering binaries. Our goal was to solve the puzzle, and we spared no effort in decrypting the clues.
