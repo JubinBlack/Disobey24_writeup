@@ -78,7 +78,7 @@ We start this debbuging with Ghidra, where we are trying to find some "meaningfu
 
 I was unable to reverse this, so time to start GDB and figure out what's happening.
 
-### [Block Cipher logic] <a name="revCipher"></a>
+## Block Cipher logic <a name="revCipher"></a>
 
 Running the script a couple of times via GDB, we finaly identify block cipher logic at address 0x....5dd -->.<br>
 
