@@ -71,7 +71,7 @@ Since the binary checks if it is being traced by reading it is reading own statu
 We start this debbuging with Ghidra, where we are trying to find some "meaningful" function what seems something like encryption.<br>
 
 !["main"](pix/image-31.png)<br>
- the most intriguing function is ```FUN_00101721```, which is called at ```0x5....ad0```. This location will serve as our starting point for the first breakpoint in GDB.
+ the most intriguing function is ```FUN_00101721```, which is called at ```0x555555555ad0```. This location will serve as our starting point for the first breakpoint in GDB.
 
  Another point was within the ```FUN_00101721``` and that was ```FUN_0010146A```, (This function was never exectued if that earlier mentioned TracerPID check was something else than 0).<br>
  ![XOR](pix/image-32.png)<br>
@@ -80,19 +80,32 @@ I was unable to reverse this, so time to start GDB and figure out what's happeni
 
 ## Block Cipher logic <a name="revCipher"></a>
 
-Running the script a couple of times via GDB, we finaly identify block cipher logic at address 0x....5dd -->.<br>
+Running the script a couple of times via GDB with easily recognizable inputs, in this case KEY: AAAABBBBCCCCDDDD and cleartext: ABCDEF... we finaly identify block cipher logic at address 0x5555555555dd -->.<br>
 
 ![XOR_logic](pix/image-24.png)<br>
 
-The KEY is located at RBP-0x23, the X (Initialization vector) or the previous block's encrypted character value is at RBP-0x22, and the cleartext character is at RBP-0x21. The entire X value for the first block is held at 0x....905 & 0x...910 (0x8948ffffff2cbd89e0ec8148e5894855). These values will be XORed for the first 16-byte block. In subsequent blocks after the first, there will still be a key and cleartext character, but now it uses the previous block's encrypted character. In a nutshell:<br>
-```KEY ^ X ^ B1CHR -> B1ENC ^ KEY ^ B2CHR -> B2ENC ^ KEY ^ B3CHR``` <br>
+The encryption process begins by initializing the cleartext and padding it to a multiple of 16 bytes. Subsequently, the data is processed in 16-byte blocks through an iterative loop.
+
+During each iteration, the following values are utilized:
+
+- The current encryption key is located at RBP-0x23.
+- The Initialization Vector (IV) or the previous block's encrypted character value, is at RBP-0x22.
+- The next cleartext character is at RBP-0x21.<br>
+
+For the first 16-byte block, the entire IV value for the block is held at a specific memory location, 0x555555555905 & 0x555555555910 (e.g., 0x8948ffffff2cbd89e0ec8148e5894855). These values are combined through XOR operations:<br>
+KEY ^ IV ^ B1CHR1 -> B1ENC1
+
+In subsequent blocks after the first, the process remains similar, but the IV now corresponds to the previous block's encrypted character. In essence, the encryption process can be summarized as follows:
+KEY ^ IV ^ B1CHR1 -> B1ENC1 ^ KEY ^ B2CHR1 -> B2ENC1 ^ KEY ^ B3CHR1
+
+Here, 'B[X]' represents the block number, and 'CHR[X]' or 'ENC[X]' denotes the character in that specific block.
 
 
 ### Reversing key <a name="revKey"></a>
 
 In the PCAP, there were three different files, but one of them should include magic bytes, and that file is an APK. Therefore, it should be possible to reverse it since we know the value of X in the first block and encrypted character (dah). Additionally, we know what the APK file's magic bytes are ('0x504B0304'). We can start reversing the files using the following logic:
 
-```KEY ^ X ^ B1CHR = B1ENC -> B1ENC ^ X ^ B1CHR = KEY```
+```KEY ^ IV ^ B1CHR = B1ENC -> B1ENC ^ IV ^ B1CHR = KEY```
 
 We initially attempted this approach with the first bytes, but it didn't work out (found later on what happened there*). Next, we tried with the second and third bytes, and we made progress:
 
@@ -111,7 +124,7 @@ Here, we have 4 bytes from key. We can now try to "open" some files with this, s
 >>> chr(0x75 ^ 0x48 ^ 0x5b)+chr(0x41 ^ 0x89 ^ 0xa1)+chr(0xdb ^ 0xe5 ^ 0x4c)+chr(0x1d ^ 0x48 ^ 0x26)
 'firs'
 ```
-Hard to guess, but this could be "firstname" which means it's possible to reverse the next 5 bytes more!
+"Hard" to guess, but this could be "firstname" which means it's possible to reverse the next 5 bytes more!
 Keep going like this there is finaly almost full key: ```"0x??7541db1dd06c035016a259d97b687d"```
 
 What comes to that first byte tho? Investigating the logic behind and reading pseudo code with ghidra, I found that there was piece missing from it: Before passing the file to the encryption function, the code checks the file size, but also it places this size to address where our clear text is located in first position. This size was first reversed with 'BITWISE NOT' operator and then used this value in a 'BITWISE AND' operator with value '0xf'.<br>
@@ -138,7 +151,7 @@ for encFile in encFiles:
 
 
     with open(encFile, 'rb') as file:
-        X = bytes.fromhex("554889e54881ece000000089bd2cffff")
+        IV = bytes.fromhex("554889e54881ece000000089bd2cffff")
         lastBlock=""
         currentBlock=""
         while True:
@@ -151,15 +164,15 @@ for encFile in encFiles:
             
             for index in range(0,16):
                 curren_byte = currentBlock[index]
-                X_Val = X[index]
+                IV_Val = IV[index]
                 key_val = int(decoded_bytes[index])
                 test = ""
 
-                test = key_val ^ X_Val ^ curren_byte
+                test = key_val ^ IV_Val ^ curren_byte
                 plaintext.append(test)
 
 
-            X=currentBlock
+            IV=currentBlock
     bPlaintext = bytes(plaintext)
 
 
