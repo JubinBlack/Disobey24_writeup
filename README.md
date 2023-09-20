@@ -398,3 +398,7 @@ We will retrieve the code from the endpoint we discovered earlier and submit it.
 
 ![Done](pix/image-22.png)<br>
 
+Do check other writeups also:
+- https://gitlab.com/Depili/disobey-2024
+- https://gofore.com/en/disobey-2024-hacker-puzzle-walkthrough/
+
