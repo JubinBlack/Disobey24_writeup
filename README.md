@@ -7,7 +7,7 @@ Please join me on this exciting journey, where collaboration and determination l
 
 # Lets begin
 
-The Disobey24 puzzle starts from <mark>kouvotopankki.fi</mark>.<br>
+The Disobey24 puzzle starts from <mark>kouvostopankki.fi</mark>.<br>
 Upon visiting the website, it becomes evident that it has been compromised by an entity named Ahven..
 
 ## Malicious script <a name="malScript"></a>
